@@ -156,6 +156,19 @@ $U/usys.S : $U/usys.pl
 $U/usys.o : $U/usys.S
 	$(CC) $(CFLAGS) -c -o $U/usys.o $U/usys.S
 
+$U/sleep.o : $U/sleep.c
+	$(CC) $(CFLAGS) -c -o $U/sleep.o $U/sleep.c
+
+$U/pingpong.o : $U/pingpong.c
+	$(CC) $(CFLAGS) -c -o $U/pingpong.o $U/pingpong.c
+
+$U/primes.o : $U/primes.c
+	$(CC) $(CFLAGS) -c -o $U/primes.o $U/primes.c
+$U/find.o : $U/find.c
+	$(CC) $(CFLAGS) -c -o $U/find.o $U/find.c
+$U/xargs.o : $U/xargs.c
+	$(CC) $(CFLAGS) -c -o $U/xargs.o $U/xargs.c
+
 $U/_forktest: $U/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
 	# in order to be able to max out the proc table.
@@ -188,6 +201,11 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_sleep\
+	$U/_pingpong\
+	$U/_primes\
+	$U/_find\
+	$U/_xargs\
 
 
 
