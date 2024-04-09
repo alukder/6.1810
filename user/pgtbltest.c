@@ -67,4 +67,5 @@ pgaccess_test()
     err("incorrect access bits set");
   free(buf);
   printf("pgaccess_test: OK\n");
+  
 }

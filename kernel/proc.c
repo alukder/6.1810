@@ -177,9 +177,9 @@ pagetable_t
 proc_pagetable(struct proc *p)
 {
   pagetable_t pagetable;
-
   // An empty page table.
   pagetable = uvmcreate();
+  
   if(pagetable == 0)
     return 0;
 
@@ -201,8 +201,12 @@ proc_pagetable(struct proc *p)
     uvmfree(pagetable, 0);
     return 0;
   }
+    struct  usyscall r;
+  uint64 add=(uint64)kalloc();
+  r.pid=p->pid;
+  *(struct usyscall *)add=r;
    if(mappages(pagetable, USYSCALL, PGSIZE,
-              (uint64)(p->trapframe), PTE_R|PTE_V ) < 0){
+              (uint64)(add), PTE_R|PTE_U ) < 0){
     uvmunmap(pagetable, TRAMPOLINE, 2, 0);
     uvmfree(pagetable, 0);
     return 0;
@@ -217,6 +221,7 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
 {
   uvmunmap(pagetable, TRAMPOLINE, 1, 0);
   uvmunmap(pagetable, TRAPFRAME, 1, 0);
+  uvmunmap(pagetable,USYSCALL,1,1);
   uvmfree(pagetable, sz);
 }
 
