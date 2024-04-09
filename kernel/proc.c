@@ -201,7 +201,12 @@ proc_pagetable(struct proc *p)
     uvmfree(pagetable, 0);
     return 0;
   }
-
+   if(mappages(pagetable, USYSCALL, PGSIZE,
+              (uint64)(p->trapframe), PTE_R|PTE_V ) < 0){
+    uvmunmap(pagetable, TRAMPOLINE, 2, 0);
+    uvmfree(pagetable, 0);
+    return 0;
+  }
   return pagetable;
 }
 
