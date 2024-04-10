@@ -153,6 +153,9 @@ _%: %.o $(ULIB)
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
 
+$U/alarmtest.o : $U/alarmtest.c
+	$(CC) $(CFLAGS) -c -o $U/alarmtest.o $U/alarmtest.c
+
 $U/usys.o : $U/usys.S
 	$(CC) $(CFLAGS) -c -o $U/usys.o $U/usys.S
 
@@ -188,6 +191,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_alarmtest\
 
 
 

@@ -99,7 +99,7 @@ exec(char *path, char **argv)
       goto bad;
     ustack[argc] = sp;
   }
-  ustack[argc] = 0;
+  ustack[argc] = 0;             
 
   // push the array of argv[] pointers.
   sp -= (argc+1) * sizeof(uint64);
