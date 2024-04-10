@@ -82,6 +82,7 @@ mycpu(void)
 struct proc*
 myproc(void)
 {
+
   push_off();
   struct cpu *c = mycpu();
   struct proc *p = c->proc;

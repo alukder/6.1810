@@ -86,7 +86,6 @@ uint64
 sys_uptime(void)
 {
   uint xticks;
-
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
@@ -95,15 +94,15 @@ sys_uptime(void)
 uint64
 sys_sigalarm(void){
 struct proc *p=myproc();
-int time;
-argint(0,&time);
-uint64 add;
-argaddr(1,&add);
-p->stoptime=time;
+argint(0,&p->stoptime);
+argaddr(1,(uint64*)&p->fun);
 p->time=0;
-p->fun=(void *)add;
+p->helptrapframe.ok=0;
 return 0;
 }
 uint64 sys_sigreturn(void){
-  return 0;
+struct proc *p=myproc();
+either_copyout(0, (uint64)p->trapframe, &p->helptrapframe, sizeof(struct trapframe));
+p->helptrapframe.ok=0;
+  return p->trapframe->a0;
 }
