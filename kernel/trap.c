@@ -76,7 +76,7 @@ usertrap(void)
   if(killed(p))
     exit(-1);
 
-  // give up the CPU if this is a timer interrupt.
+  // give up the CPU if this is a timer interrupt,时钟计时增加放在了devintr中
   if(which_dev == 2)
     yield();
 
