@@ -1,3 +1,4 @@
+// #include <cstddef>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -16,7 +17,7 @@ struct barrier {
 
 static void
 barrier_init(void)
-{
+{ 
   assert(pthread_mutex_init(&bstate.barrier_mutex, NULL) == 0);
   assert(pthread_cond_init(&bstate.barrier_cond, NULL) == 0);
   bstate.nthread = 0;
@@ -30,7 +31,22 @@ barrier()
   // Block until all threads have called barrier() and
   // then increment bstate.round.
   //
-  
+static int first=1,nthread=0;
+pthread_mutex_lock(&bstate.barrier_mutex);
+if(first==1){
+  first=0;
+  nthread=0;
+}
+nthread++;
+if(nthread==bstate.nthread){
+first=1;
+bstate.round++;
+pthread_cond_broadcast(&bstate.barrier_cond);
+}else{
+pthread_cond_wait(&bstate.barrier_cond,&bstate.barrier_mutex);
+}
+pthread_mutex_unlock(&bstate.barrier_mutex);
+
 }
 
 static void *
@@ -67,7 +83,7 @@ main(int argc, char *argv[])
   srandom(0);
 
   barrier_init();
-
+bstate.nthread=nthread;
   for(i = 0; i < nthread; i++) {
     assert(pthread_create(&tha[i], NULL, thread, (void *) i) == 0);
   }
