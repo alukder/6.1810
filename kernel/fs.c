@@ -388,26 +388,28 @@ static uint bmap(struct inode *ip, uint bn) {
     return addr;
   }
   bn-=256;
-  uint helpaddr,addr1;
+  
+
   if (bn < 256*256) {
-    if ((addr1 = ip->addrs[NDIRECT + 1]) == 0) {
-      addr1 = balloc(ip->dev);
-      if (addr1 == 0)
+   
+    if ((addr = ip->addrs[NDIRECT + 1]) == 0) {
+      addr = balloc(ip->dev);
+      if (addr == 0)
         return 0;
-      ip->addrs[NDIRECT + 1] = addr1;
+      ip->addrs[NDIRECT + 1] = addr;
     }
 
-    bp = bread(ip->dev, addr1);
+    bp = bread(ip->dev, addr);
     a = (uint *)bp->data;
-    if ((helpaddr = a[bn / 256]) == 0) {
-      helpaddr = balloc(ip->dev);
-      if (helpaddr == 0)
+    if ((addr = a[bn / 256]) == 0) {
+      addr = balloc(ip->dev);
+      if (addr == 0)
         return 0;
-      a[bn / 256] = helpaddr;
+      a[bn / 256] = addr;
       log_write(bp);
     }
 
-    bp1 = bread(ip->dev, helpaddr);
+    bp1 = bread(ip->dev, addr);
     a = (uint *)bp1->data;
     if ((addr = a[bn  % 256]) == 0) {
       addr = balloc(ip->dev);
@@ -416,8 +418,9 @@ static uint bmap(struct inode *ip, uint bn) {
         log_write(bp1);
       }
     }
+    
     brelse(bp);
-    brelse(bp1);
+   brelse(bp1);
     return addr;
   }
   panic("bmap: out of range");
@@ -427,7 +430,7 @@ static uint bmap(struct inode *ip, uint bn) {
 // Caller must hold ip->lock.
 void itrunc(struct inode *ip) {
   int i, j;
-  struct buf *bp;
+  struct buf *bp,*bp1;
   uint *a,*b;
 
   for (i = 0; i < NDIRECT; i++) {
@@ -453,21 +456,24 @@ void itrunc(struct inode *ip) {
     a = (uint *)bp->data;
 
     for (int i = 0; i < 256; i++) {
-      if(!a[i])
-        continue;
-      bp =bread(ip->dev, a[i]);
-      b=(uint *)bp;
+      if(a[i])
+       {
+      bp1 =bread(ip->dev, a[i]);
+      b=(uint *)bp1->data;
       for (j = 0; j < NINDIRECT; j++) {
         if (b[j])
           bfree(ip->dev, b[j]);
       }
-      brelse(bp);
+      brelse(bp1);
       bfree(ip->dev, a[i]);
-      a[i] = 0;
+      a[i]=0;}
     }
-    ip->size = 0;
-    iupdate(ip);
+    brelse(bp);
+    bfree(ip->dev, ip->addrs[NDIRECT+1]);
+ ip->addrs[NDIRECT+1]=0;
   }
+     ip->size = 0;
+    iupdate(ip);
 }
 
 // Copy stat information from inode.
