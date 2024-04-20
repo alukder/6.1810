@@ -106,6 +106,9 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
+void*           mmap(void *,int,int,int,int,int);
+uint64          help_munmap(void *,int);
+uint64          help_mmap(uint64,int,int,int,int,int);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -173,7 +176,8 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
-
+int             helpmappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm);
+int             fork_uvmcopy(pagetable_t, pagetable_t, uint64);
 // plic.c
 void            plicinit(void);
 void            plicinithart(void);

@@ -136,6 +136,7 @@ $U/initcode: $U/initcode.S
 	$(OBJCOPY) -S -O binary $U/initcode.out $U/initcode
 	$(OBJDUMP) -S $U/initcode.o > $U/initcode.asm
 
+   
 tags: $(OBJS) _init
 	etags *.S *.c
 
@@ -188,6 +189,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_mmaptest\
 
 
 
@@ -223,7 +225,8 @@ $U/uthread_switch.o : $U/uthread_switch.S
 $U/_uthread: $U/uthread.o $U/uthread_switch.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_uthread $U/uthread.o $U/uthread_switch.o $(ULIB)
 	$(OBJDUMP) -S $U/_uthread > $U/uthread.asm
-
+# $U/mmaptest: $U/mmaptest.c
+#    $(CC) $(CFLAGS) -o $U/mmaptest $U/mmaptest.c
 ph: notxv6/ph.c
 	gcc -o ph -g -O2 $(XCFLAGS) notxv6/ph.c -pthread
 

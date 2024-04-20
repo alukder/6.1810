@@ -182,8 +182,10 @@ mmap_test(void)
     err("open");
   for (i = 0; i < PGSIZE + (PGSIZE/2); i++){
     char b;
+    // static int ie=0;
     if (read(fd, &b, 1) != 1)
       err("read (1)");
+    // printf("%d ",ie++);
     if (b != 'Z')
       err("file does not contain modifications");
   }
@@ -196,7 +198,7 @@ mmap_test(void)
   
   // unmap the rest of the mapped memory.
   if (munmap(p+PGSIZE*2, PGSIZE) == -1)
-    err("munmap (4)");
+      err("munmap (4)");
 
   printf("test not-mapped unmap: OK\n");
     
@@ -229,9 +231,10 @@ mmap_test(void)
 
   if(memcmp(p1, "12345", 5) != 0)
     err("mmap1 mismatch");
+  printf("ok1\n");
   if(memcmp(p2, "67890", 5) != 0)
     err("mmap2 mismatch");
-
+  printf("ok\n");
   munmap(p1, PGSIZE);
   if(memcmp(p2, "67890", 5) != 0)
     err("mmap2 mismatch (2)");
@@ -271,13 +274,16 @@ fork_test(void)
   // read just 2nd page.
   if(*(p1+PGSIZE) != 'A')
     err("fork mismatch (1)");
-
+printf(" yes?\n");
   if((pid = fork()) < 0)
     err("fork");
   if (pid == 0) {
     _v1(p1);
+  
     munmap(p1, PGSIZE); // just the first page
+    printf("hello,i am not father\n");
     exit(0); // tell the parent that the mapping looks OK.
+    
   }
 
   int status = -1;
@@ -289,6 +295,7 @@ fork_test(void)
   }
 
   // check that the parent's mappings are still there.
+  printf("yes");
   _v1(p1);
   _v1(p2);
 
