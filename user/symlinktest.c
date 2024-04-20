@@ -70,53 +70,56 @@ testsymlink(void)
   r = symlink("/testsymlink/a", "/testsymlink/b");
   if(r < 0)
     fail("symlink b -> a failed");
-
+  printf("ok0\n");
   if(write(fd1, buf, sizeof(buf)) != 4)
     fail("failed to write to a");
-
+printf("ok1\n");
   if (stat_slink("/testsymlink/b", &st) != 0)
     fail("failed to stat b");
+  printf("ok2\n");
   if(st.type != T_SYMLINK)
     fail("b isn't a symlink");
-
+printf("ok3\n");
   fd2 = open("/testsymlink/b", O_RDWR);
   if(fd2 < 0)
     fail("failed to open b");
+  printf("ok4\n");
+
   read(fd2, &c, 1);
   if (c != 'a')
     fail("failed to read bytes from b");
-
+printf("ok5\n");
   unlink("/testsymlink/a");
   if(open("/testsymlink/b", O_RDWR) >= 0)
     fail("Should not be able to open b after deleting a");
-
+printf("ok6\n");
   r = symlink("/testsymlink/b", "/testsymlink/a");
   if(r < 0)
     fail("symlink a -> b failed");
-
+printf("ok7\n");
   r = open("/testsymlink/b", O_RDWR);
   if(r >= 0)
     fail("Should not be able to open b (cycle b->a->b->..)\n");
-  
+  printf("ok8\n");
   r = symlink("/testsymlink/nonexistent", "/testsymlink/c");
   if(r != 0)
     fail("Symlinking to nonexistent file should succeed\n");
-
+printf("ok9\n");
   r = symlink("/testsymlink/2", "/testsymlink/1");
   if(r) fail("Failed to link 1->2");
   r = symlink("/testsymlink/3", "/testsymlink/2");
   if(r) fail("Failed to link 2->3");
   r = symlink("/testsymlink/4", "/testsymlink/3");
   if(r) fail("Failed to link 3->4");
-
+printf("ok10\n");
   close(fd1);
   close(fd2);
-
+printf("ok11\n");
   fd1 = open("/testsymlink/4", O_CREATE | O_RDWR);
   if(fd1<0) fail("Failed to create 4\n");
   fd2 = open("/testsymlink/1", O_RDWR);
   if(fd2<0) fail("Failed to open 1\n");
-
+printf("ok12\n");
   c = '#';
   r = write(fd2, &c, 1);
   if(r!=1) fail("Failed to write to 1\n");
@@ -124,7 +127,7 @@ testsymlink(void)
   if(r!=1) fail("Failed to read from 4\n");
   if(c!=c2)
     fail("Value read from 4 differed from value written to 1\n");
-
+printf("ok13\n");
   printf("test symlinks: ok\n");
 done:
   close(fd1);
@@ -138,7 +141,8 @@ concur(void)
   int fd;
   struct stat st;
   int nchild = 2;
-
+  static int ok=0;
+  
   printf("Start: test concurrent symlinks\n");
     
   fd = open("/testsymlink/z", O_CREATE | O_RDWR);
@@ -147,13 +151,14 @@ concur(void)
     exit(1);
   }
   close(fd);
-
+printf("ck:%d\n",ok++);
   for(int j = 0; j < nchild; j++) {
     pid = fork();
     if(pid < 0){
       printf("FAILED: fork failed\n");
       exit(1);
     }
+    printf("ck:%d\n",ok++);
     if(pid == 0) {
       int m = 0;
       unsigned int x = (pid ? 1 : 97);
@@ -167,8 +172,10 @@ concur(void)
               printf("FAILED: not a symbolic link\n", st.type);
               exit(1);
             }
+            printf("ck:%d\n",ok++);
           }
         } else {
+          printf("oh!%d\n",ok++);
           unlink("/testsymlink/y");
         }
       }
