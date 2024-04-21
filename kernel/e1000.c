@@ -20,7 +20,8 @@ static struct mbuf *rx_mbufs[RX_RING_SIZE];
 static volatile uint32 *regs;
 
 struct spinlock e1000_lock;
-
+struct spinlock e1000_readlock;
+struct spinlock e1000_writelock;
 // called by pci_init().
 // xregs is the memory address at which the
 // e1000's registers are mapped.
@@ -30,7 +31,9 @@ e1000_init(uint32 *xregs)
   int i;
 
   initlock(&e1000_lock, "e1000");
-
+  initlock(&e1000_readlock, "e1000");
+  initlock(&e1000_writelock, "e1000");
+ 
   regs = xregs;
 
   // Reset the device
@@ -91,32 +94,80 @@ e1000_init(uint32 *xregs)
   regs[E1000_RADV] = 0; // interrupt after every packet (no timer)
   regs[E1000_IMS] = (1 << 7); // RXDW -- Receiver Descriptor Write Back
 }
-
 int
 e1000_transmit(struct mbuf *m)
-{
-  //
-  // Your code here.
-  //
-  // the mbuf contains an ethernet frame; program it into
-  // the TX descriptor ring so that the e1000 sends it. Stash
-  // a pointer so that it can be freed after sending.
-  //
-  
+{ 
+  printf("send\n");
+  acquire(&e1000_writelock);
+  uint64 help = (uint64)(regs[E1000_TDT] % TX_RING_SIZE);
+  struct tx_desc *tx = &tx_ring[help];
+  struct mbuf *buf = tx_mbufs[help];
+
+  // 确保上一个传输请求已经完成
+  if (!(tx->status & E1000_TXD_STAT_DD)) {
+    release(&e1000_writelock);
+    return -1;
+  }
+
+  // 释放之前存储的 mbuf
+  if (buf) {
+    struct mbuf *temp;
+  while(buf){
+    temp=buf->next;
+    mbuffree(buf);
+    buf=temp;}
+  }
+
+  // 准备新的 mbuf 进行传输
+  tx->addr = (uint64)m->head;
+  tx->length = m->len;
+  tx_mbufs[help] = m;
+
+  // 设置传输描述符命令
+  tx->cmd = E1000_TXD_CMD_EOP | E1000_TXD_CMD_RS; // 假设 IFCS 需要设置
+
+  // 更新发送队列尾指针
+  regs[E1000_TDT] = (regs[E1000_TDT]+ 1) % TX_RING_SIZE;
+   release(&e1000_writelock);
   return 0;
 }
-
 static void
 e1000_recv(void)
-{
-  //
-  // Your code here.
-  //
-  // Check for packets that have arrived from the e1000
-  // Create and deliver an mbuf for each packet (using net_rx()).
-  //
-}
+{ 
+   printf("yes!\n");
+   acquire(&e1000_lock);
+  acquire(&e1000_readlock);
+  uint64 help = (uint64)((regs[E1000_RDT] +1)% RX_RING_SIZE);
+  struct rx_desc *rx = &rx_ring[help];
 
+  // 检查是否收到包
+
+for(;rx->status & E1000_RXD_STAT_DD;help = (uint64)((regs[E1000_RDT] +1)% RX_RING_SIZE),rx = &rx_ring[help]){
+  struct mbuf *buf = rx_mbufs[help];
+  if (buf) {
+    // 设置 mbuf 的长度并交付它
+    buf->len = rx->length;
+    net_rx(buf);
+  }
+  // 准备接收新的包
+  buf = mbufalloc(0);
+  if (buf) {
+    rx->addr = (uint64)buf->head;
+    rx_mbufs[help] = buf;
+  } else {
+    // 如果没有可用的 mbuf，将地址设置为 0 以避免硬件错误
+    rx->addr = 0;
+    panic("no mbuf");
+  }
+  // 清除描述符状态以准备接收
+  rx->status = 0;
+  // 更新接收队列尾指针
+  regs[E1000_RDT] = (regs[E1000_RDT] + 1) % RX_RING_SIZE;
+  }
+  release(&e1000_lock);
+  release(&e1000_readlock);
+ 
+}
 void
 e1000_intr(void)
 {
